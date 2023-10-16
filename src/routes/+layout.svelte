@@ -3,9 +3,13 @@
 	import '../app.postcss';
 	let showOverlay = true;
 	let location: string | { lat: number; lng: number };
-	let disableButtons = false;
+
+	type status = 'waiting' | 'working' | 'done';
+
+	let status: status = 'waiting';
 
 	function getLocation() {
+		status = 'working';
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition((position) => {
 				location = {
@@ -25,11 +29,13 @@
 			alert('Please input your location.');
 			return;
 		}
+		status = 'working';
 		publishLocation();
 		showOverlay = false;
 	}
 
 	async function publishLocation() {
+		status = 'done';
 		socket.emit('new-location', location);
 	}
 </script>
@@ -43,7 +49,7 @@
 			<div class="flex justify-between">
 				<button
 					class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-					disabled={disableButtons}
+					disabled={status === 'working' || status === 'done'}
 					on:click|preventDefault={getLocation}>Share location</button
 				>
 				<p class="align-center py-2 px-4">or</p>
@@ -56,7 +62,7 @@
 					/>
 					<button
 						class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r"
-						disabled={disableButtons}
+						disabled={status === 'working' || status === 'done'}
 						on:click|preventDefault={submitLocation}>Submit</button
 					>
 				</div>

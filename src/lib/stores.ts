@@ -1,6 +1,7 @@
-import { writable } from "svelte/store";
+import { writable, type Writable } from "svelte/store";
+import type { GameState, Location } from "./sockets";
 
-export let locationsStore = writable();
-export let currentPromptStore = writable();
-export let countdownStore = writable(0);
-export let gameStateStore = writable();
+
+export const locationsStore: Writable<Location[]> = writable();
+export const gameStateStore: Writable<GameState> = writable();
+export const timerStore: Writable<number> = writable();
