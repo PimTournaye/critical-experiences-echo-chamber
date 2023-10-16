@@ -117,7 +117,7 @@ const startGame = async () => {
   // After the first set, start the second setLoop
   await setLoop(sets[1]);
   // After the second set, start the third setLoop
-  await setLoop(sets[3]);
+  await setLoop(sets[2]);
   // After the third set, end the game by publishing the closing message
   endGame();
 }

@@ -1,9 +1,11 @@
 <script lang="ts">
   import { gameStateStore } from '$lib/stores';
 	import { onMount } from 'svelte';
-  import { gsap } from "gsap";
-  import { TextPlugin } from "gsap/TextPlugin";
-  gsap.registerPlugin(TextPlugin);
+  import { gsap } from "gsap/dist/gsap";
+  import { TextPlugin } from "gsap/dist/TextPlugin";
+    
+    
+    gsap.registerPlugin(TextPlugin);
 
   let started: boolean = false;
   let prompts: boolean = false;
@@ -34,13 +36,18 @@ $: if (currentPrompt) {
 {#if started}
   {#if prompts}
     <h1 class="font-bold text-6xl mx-auto" id="current-prompt">{$gameStateStore.currentString}</h1>
-  {:else}
+  {:else if submit}
     <div class="flex flex-col">
       {#each $gameStateStore.currentPrompt as prompt}
         <p class="font-bold text-2xl mx-auto">{prompt}</p>
       {/each}
     </div>
+  {:else if cooldown}
+    <h1 class="font-bold text-6xl mx-auto">
+      View another's perspective.
+    </h1>
   {/if}
+
 {:else}
 <h1 class="font-bold text-6xl mx-auto">
   Waiting for others...

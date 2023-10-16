@@ -12,5 +12,5 @@
 {/if}
 
 {#if $gameStateStore.stage === 'cooldown'}
-  <button>Get someone's perspective</button>
+  <button>Try it.</button>
 {/if}
