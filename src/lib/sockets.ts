@@ -15,8 +15,6 @@ export type GameState = {
 
 export type Location = { lat?: number; lng?: number; string?: string }
 
-
-
 // Location data socket logic
 socket.on('locations', (data: Location[]) => {
     console.log('locations', data);

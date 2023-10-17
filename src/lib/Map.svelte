@@ -10,7 +10,6 @@
 		{ lat: -18.142, lng: 178.431 },
 		{ lat: -27.467, lng: 153.027 }
 	];
-
 	onMount(() => {
 		const element = document.getElementById('map')!;
 		// Get the dimensions of the container

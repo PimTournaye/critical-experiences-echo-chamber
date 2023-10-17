@@ -17,8 +17,8 @@ let locations = [];
 let responses = [];
 
 io.on("connection", (socket) => {
-
-  log("a user connected");
+  // Pass the gamestate on to the newly connected user in case they join the middle of a game loop
+  socket.emit("state", gameState);
 
   // When a new location gets published
   socket.on("new-location", (data) => {
@@ -27,7 +27,7 @@ io.on("connection", (socket) => {
 
     let loc; //: { lat?: number; lng?: number; socketId?: string; string?: string };
     // If the data has an object with lat and lng
-    if(data.lat && data.lng) loc = { lat: data.lat, lng: data.lng, socketId: socket.id };
+    if (data.lat && data.lng) loc = { lat: data.lat, lng: data.lng, socketId: socket.id };
     else loc = { string: data.string, socketId: socket.id };
 
     // Add the new data our array and publish the new data
@@ -40,14 +40,12 @@ io.on("connection", (socket) => {
     });
     io.emit("locations", locationsSansSocketIds);
   });
-  // Pass the gamestate on to the newly connected user in case they join the middle of a game loop
-  socket.emit("state", gameState);
 
   // Check if we can start the game loop
   checkAndStartLoop();
 
   // When we receive a new response to a prompt
-  socket.on("response-submit", (data) => {
+  socket.on("submit-response", (data) => {
     if (responses.length <= 0) responses.push(data);
     else responses = [...responses, data];
   });
@@ -76,7 +74,6 @@ function checkAndStartLoop() {
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-
 
 // Countdown/game logic
 // Once the game starts. publish the locations of all the users, and publish the first prompt, get getting the correct set and prompt. This is the start of the game loop.
@@ -112,7 +109,7 @@ const startGame = async () => {
   gameState.started = true;
   // Publish the locations of all the users
   io.emit("locations", locations);
-  // Start the game loop with the first set
+  // Start the game loop with the first set, I SHOULD PROBABLY MAKE THIS A FUNCTION
   await setLoop(sets[0]);
   // After the first set, start the second setLoop
   await setLoop(sets[1]);
@@ -127,15 +124,15 @@ const setLoop = async (set) => {
   log("Starting set loop");
   log(set);
   for (const prompt of set) {
-  // console.log(prompt);
-  // Reset the responses
-  responses = [];
-  // Start a prompt loop which resolves after we've gone through the three strings in the current prompt
-  await promptStage(prompt);
-  // Start the submit stage
-  await submitStage();
-  // Start the cooldown loop
-  await cooldownStage();
+    // console.log(prompt);
+    // Reset the responses
+    responses = [];
+    // Start a prompt loop which resolves after we've gone through the three strings in the current prompt
+    await promptStage(prompt);
+    // Start the submit stage
+    await submitStage();
+    // Start the cooldown loop
+    await cooldownStage();
   }
 }
 
@@ -178,12 +175,10 @@ const cooldownStage = async () => {
 
 const endGame = () => {
   io.emit("game-over", closingMessage);
-  // Reset the gamestate
-  gameState = initialGameState;
-  // Reset the responses
-  responses = [];
   // Active the postgame cooldown, which resolves after 5 minutes
   inPostgameCooldown = true;
+  // Update the gamestate
+  gameState.stage = 'postgame';
   // Start the postgame cooldown
   postGameCooldown();
 }
@@ -192,6 +187,10 @@ const postGameCooldown = () => {
   // After 5 minutes, set the gamestate started back to false and set up a new game
   setTimeout(() => {
     inPostgameCooldown = false;
+    // Reset the gamestate
+    gameState = initialGameState;
+    // Reset the responses
+    responses = [];
   }, 300000);
 }
 

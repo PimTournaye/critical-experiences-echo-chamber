@@ -1,55 +1,75 @@
 <script lang="ts">
-  import { gameStateStore } from '$lib/stores';
+	import { gameStateStore } from '$lib/stores';
+	import { socket } from '$lib/sockets';
 	import { onMount } from 'svelte';
-  import { gsap } from "gsap/dist/gsap";
-  import { TextPlugin } from "gsap/dist/TextPlugin";
-    
-    
-    gsap.registerPlugin(TextPlugin);
+	import { browser } from '$app/environment';
 
-  let started: boolean = false;
-  let prompts: boolean = false;
-  let submit: boolean = false;
-  let cooldown: boolean = false;
+	let started: boolean = false;
+	let prompts: boolean = false;
+	let submit: boolean = false;
+	let cooldown: boolean = false;
+	let gotResponse: boolean = false;
 
-  $: started = $gameStateStore.started;
-  $: prompts = $gameStateStore.stage === 'prompts';
-  $: submit = $gameStateStore.stage === 'submit';
-  $: cooldown = $gameStateStore.stage === 'cooldown';
+	$: started = $gameStateStore.started;
+	$: prompts = $gameStateStore.stage === 'prompts';
+	$: submit = $gameStateStore.stage === 'submit';
+	$: cooldown = $gameStateStore.stage === 'cooldown';
+	$: if (!cooldown) gotResponse = false;
 
+	let currentPrompt: HTMLElement;
+	onMount(() => {
+		currentPrompt = document.querySelector('#current-prompt')!;
+	});
 
-let currentPrompt: HTMLElement;
-onMount(() => {
-  currentPrompt = document.querySelector("#current-prompt")!;
-});
+	const getResponse = () => {
+		socket.emit('response-request');
+		socket.on('response-request', (response: string) => {
+			gotResponse = true;
+			// Fill in the response in the reponse div
+      gsap.to('#response', {
+        duration: 0.5,
+        text: response,
+        ease: 'none'
+      });
+		});
+	};
 
-$: if (currentPrompt) {
-  gsap.to(currentPrompt, {
-    duration: 0.5,
-    text: $gameStateStore.currentString,
-    ease: "none"
-  });
-}
-
+	$: if (currentPrompt) {
+		gsap.to(currentPrompt, {
+			duration: 0.5,
+			text: $gameStateStore.currentString,
+			ease: 'none'
+		});
+	}
 </script>
 
-{#if started}
-  {#if prompts}
-    <h1 class="font-bold text-6xl mx-auto" id="current-prompt">{$gameStateStore.currentString}</h1>
-  {:else if submit}
-    <div class="flex flex-col">
-      {#each $gameStateStore.currentPrompt as prompt}
-        <p class="font-bold text-2xl mx-auto">{prompt}</p>
-      {/each}
-    </div>
-  {:else if cooldown}
-    <h1 class="font-bold text-6xl mx-auto">
-      View another's perspective.
-    </h1>
-  {/if}
+<svelte:head>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+</svelte:head>
 
+{#if started}
+	{#if prompts}
+		<h1 class="font-bold text-6xl mx-auto" id="current-prompt">{$gameStateStore.currentString}</h1>
+	{:else if submit}
+		<div class="flex flex-col">
+			{#each $gameStateStore.currentPrompt as prompt}
+				<p class="font-bold text-2xl mx-auto">{prompt}</p>
+			{/each}
+		</div>
+	{:else if cooldown}
+		<div class="flex flex-col space-y-4">
+			<button
+				class="font-bold text-6xl mx-auto"
+				on:submit={getResponse}
+				disabled={gotResponse}
+				id="response-request"
+			>
+				View another's perspective.
+			</button>
+			<div class="text-6xl font-bold mx-auto" id="response"/>
+		</div>
+	{/if}
 {:else}
-<h1 class="font-bold text-6xl mx-auto">
-  Waiting for others...
-</h1>
+	<h1 class="font-bold text-6xl mx-auto">Waiting for others...</h1>
 {/if}

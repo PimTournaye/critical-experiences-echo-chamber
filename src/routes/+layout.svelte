@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { socket } from '$lib/sockets';
+	import { beforeUpdate } from 'svelte';
 	import '../app.postcss';
+	import { gameStateStore } from '$lib/stores';
 	let showOverlay = true;
 	let location: string | { lat: number; lng: number };
 
@@ -38,6 +40,14 @@
 		status = 'done';
 		socket.emit('new-location', location);
 	}
+
+
+	beforeUpdate(() => {
+		socket.connect();
+		// Check if we have received the gamestate from the server
+		console.log($gameStateStore);
+		
+	});
 </script>
 
 {#if showOverlay}
@@ -72,6 +82,3 @@
 {/if}
 
 <slot />
-
-<style>
-</style>
