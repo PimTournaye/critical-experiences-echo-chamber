@@ -2,7 +2,6 @@
 	import { gameStateStore } from '$lib/stores';
 	import { socket } from '$lib/sockets';
 	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
 
 	let started: boolean = false;
 	let prompts: boolean = false;
@@ -11,7 +10,7 @@
 	let gotResponse: boolean = false;
 
 	$: started = $gameStateStore.started;
-	$: prompts = $gameStateStore.stage === 'prompts';
+	$: prompts = $gameStateStore.stage === 'prompt';
 	$: submit = $gameStateStore.stage === 'submit';
 	$: cooldown = $gameStateStore.stage === 'cooldown';
 	$: if (!cooldown) gotResponse = false;
@@ -26,21 +25,13 @@
 		socket.on('response-request', (response: string) => {
 			gotResponse = true;
 			// Fill in the response in the reponse div
-      gsap.to('#response', {
-        duration: 0.5,
-        text: response,
-        ease: 'none'
-      });
+			const responseDiv = document.querySelector('#response')!;
+			responseDiv.innerHTML = response;
 		});
 	};
 
-	$: if (currentPrompt) {
-		gsap.to(currentPrompt, {
-			duration: 0.5,
-			text: $gameStateStore.currentString,
-			ease: 'none'
-		});
-	}
+	$: console.log($gameStateStore.currentString);
+	$: console.log($gameStateStore.stage);
 </script>
 
 <svelte:head>

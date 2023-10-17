@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 import { locationsStore, gameStateStore, timerStore } from './stores';
-// export const socket = io('https://echo-chamber-socket-server.glitch.me/');
-export const socket = io('http://localhost:3000', { transports: ['websocket', 'polling', 'flashsocket'] });
+export const SOCKET_SERVER_URL = 'http://localhost:3000';
+export const socket = io(SOCKET_SERVER_URL, { transports: ['websocket', 'polling', 'flashsocket'] });
 
 export type GameState = {
     started: boolean;
@@ -17,7 +17,6 @@ export type Location = { lat?: number; lng?: number; string?: string }
 
 // Location data socket logic
 socket.on('locations', (data: Location[]) => {
-    console.log('locations', data);
     locationsStore.set(data);
 });
 

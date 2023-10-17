@@ -16,6 +16,13 @@ const io = new Server(httpServer, {
 let locations = [];
 let responses = [];
 
+app.get("/", (req, res) => {
+  console.log("GET /");
+  log(res);
+  log(gameState)
+  res.send(gameState);
+});
+
 io.on("connection", (socket) => {
   // Pass the gamestate on to the newly connected user in case they join the middle of a game loop
   socket.emit("state", gameState);
@@ -24,16 +31,15 @@ io.on("connection", (socket) => {
   socket.on("new-location", (data) => {
     console.log('new location received', data);
 
-
     let loc; //: { lat?: number; lng?: number; socketId?: string; string?: string };
-    // If the data has an object with lat and lng
+    // Add the socketID to the location data
     if (data.lat && data.lng) loc = { lat: data.lat, lng: data.lng, socketId: socket.id };
     else loc = { string: data.string, socketId: socket.id };
 
     // Add the new data our array and publish the new data
     if (locations.length <= 0) locations.push(loc);
     else locations = [...locations, loc];
-    // Publish the updated list to all users, sans socketIDs
+    // Publish the updated list to all users, sans socketIDs for security and privacy
     const locationsSansSocketIds = locations.map((loc) => {
       if (loc.lat && loc.lng) return { lat: loc.lat, lng: loc.lng };
       else return { string: loc.string };
@@ -95,7 +101,7 @@ let gameState = {
   started: false,
   currentSet: sets[0],
   currentPrompt: sets[0][0],
-  currentString: '',
+  currentString: sets[0][0][0],
   currentTimer: 0,
   currentPromptIndex: 0,
   stage: ''
@@ -122,7 +128,6 @@ const startGame = async () => {
 // Loop through the prompts in our set
 const setLoop = async (set) => {
   log("Starting set loop");
-  log(set);
   for (const prompt of set) {
     // console.log(prompt);
     // Reset the responses
@@ -137,6 +142,7 @@ const setLoop = async (set) => {
 }
 
 const promptStage = async (prompt) => {
+  log("Starting prompt stage");
   // Emit start of stage
   gameState.stage = 'prompt';
   gameState.currentPrompt = prompt;
@@ -148,12 +154,8 @@ const promptStage = async (prompt) => {
   }
 }
 
-
-
-// A window of 30 seconds where users can submit their responses
-// while this timer is running, the current prompt is not updated and the gamestate is not advanced
-// Submit stage - open for responses
 async function submitStage() {
+  log("Starting submit stage");
   // Emit start of stage
   gameState.stage = 'submit';
   io.emit('stage', gameState);
@@ -164,9 +166,8 @@ async function submitStage() {
   }
 }
 
-// A timer that lasts 30 seconds, which allows users to request a response from another user
-// while this timer is running, the current prompt is not updated and the gamestate is not advanced
 const cooldownStage = async () => {
+  log("Starting cooldown stage");
   // Emit start of stage
   gameState.stage = 'cooldown';
   io.emit('stage', gameState);
@@ -174,11 +175,14 @@ const cooldownStage = async () => {
 }
 
 const endGame = () => {
+  log("Ending game");
+  gameState.stage = 'postgame';
   io.emit("game-over", closingMessage);
+  gameState.currentString = closingMessage;
+  io.emit('stage', gameState)
   // Active the postgame cooldown, which resolves after 5 minutes
   inPostgameCooldown = true;
   // Update the gamestate
-  gameState.stage = 'postgame';
   // Start the postgame cooldown
   postGameCooldown();
 }

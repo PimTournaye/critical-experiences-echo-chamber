@@ -15,6 +15,11 @@
 
 	// Reactive logic and statements
 	$: started = $gameStateStore.started;
+	$: if ($gameStateStore.stage === 'submit') {
+		// Reset input
+		lockedInput = false;
+		input = '';
+	}
 	$: if ($gameStateStore.stage === 'cooldown') {
 		// Reset input
 		lockedInput = false;
